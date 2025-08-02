@@ -1,20 +1,32 @@
 
+import { db } from '../db';
+import { coffeeProductsTable } from '../db/schema';
 import { type CreateCoffeeProductInput, type CoffeeProduct } from '../schema';
 
 export const createCoffeeProduct = async (input: CreateCoffeeProductInput): Promise<CoffeeProduct> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new coffee product and persisting it in the database.
-    // Only admin users should be able to create products.
-    return {
-        id: 0, // Placeholder ID
+  try {
+    // Insert coffee product record
+    const result = await db.insert(coffeeProductsTable)
+      .values({
         name: input.name,
         description: input.description,
-        price: input.price,
+        price: input.price.toString(), // Convert number to string for numeric column
         image_url: input.image_url,
         origin: input.origin,
         roast_type: input.roast_type,
-        stock_quantity: input.stock_quantity,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as CoffeeProduct;
+        stock_quantity: input.stock_quantity
+      })
+      .returning()
+      .execute();
+
+    // Convert numeric fields back to numbers before returning
+    const product = result[0];
+    return {
+      ...product,
+      price: parseFloat(product.price) // Convert string back to number
+    };
+  } catch (error) {
+    console.error('Coffee product creation failed:', error);
+    throw error;
+  }
 };
